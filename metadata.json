@@ -1,0 +1,6 @@
+{
+  "name": "DirIA Angola — Inteligência Jurídica",
+  "description": "Plataforma de inteligência jurídica para o Direito Angolano, pareceres preliminares, minutas, cálculo laboral e recomendação de advogados OAA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
