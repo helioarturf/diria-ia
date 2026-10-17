@@ -95,13 +95,39 @@ EOF
 }
 
 # ---------------------------------------------------------------
+# Instalar dependências (limpo e reproduzível)
+# ---------------------------------------------------------------
+install_deps() {
+    local extra="${1:-}"
+
+    if [ -f package-lock.json ]; then
+        echo "➜ Instalando dependências com 'npm ci' (limpo e reproduzível)..."
+        # 'npm ci' remove node_modules antigos — evita o erro
+        # "Cannot read properties of null (reading 'edgesOut')".
+        if npm ci $extra --no-audit --no-fund; then
+            return 0
+        fi
+        echo "⚠ 'npm ci' falhou — a limpar node_modules e tentar 'npm install'..."
+        rm -rf node_modules
+    fi
+
+    echo "➜ Instalando dependências com 'npm install'..."
+    if ! npm install $extra --no-audit --no-fund; then
+        echo "✗ Falha ao instalar as dependências."
+        echo "  Causas comuns: ligação à internet instável, ou node_modules corrompido."
+        echo "  Tenta manualmente:  rm -rf node_modules && npm install"
+        return 1
+    fi
+}
+
+# ---------------------------------------------------------------
 # Build local (frontend Vite + backend esbuild)
 # ---------------------------------------------------------------
 build() {
     ensure_node
 
     echo "➜ Instalando dependências (com devDependencies, precisa para o build)..."
-    npm install --no-audit --no-fund
+    install_deps
 
     echo "➜ Compilando frontend (vite → dist/)..."
     npm run build
@@ -187,7 +213,7 @@ deploy_remote() {
 
     echo "➜ Instalando dependências no servidor (produção)..."
     $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" \
-        "cd ~/$CPANEL_DIR && npm install --omit=dev --no-audit --no-fund 2>&1 | tail -3"
+        "cd ~/$CPANEL_DIR && (npm ci --omit=dev --no-audit --no-fund || { rm -rf node_modules && npm install --omit=dev --no-audit --no-fund; }) 2>&1 | tail -3"
 
     echo "➜ Verificando .env no servidor..."
     local ENV_STATUS
