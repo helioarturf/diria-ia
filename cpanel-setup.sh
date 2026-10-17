@@ -74,8 +74,15 @@ if ! command -v node >/dev/null 2>&1; then
     fi
     if [ -n "$VENV" ]; then
         echo "➜ A activar ambiente Node do cPanel: $VENV"
+        # O activate do cPanel/CloudLinux não é compatível com 'set -u'
+        set +u
+        set +e
         # shellcheck disable=SC1090
         source "$VENV"
+        set -e
+        # Reforço: garantir a pasta bin do ambiente no PATH
+        export PATH="$(dirname "$VENV"):$PATH"
+        set -u
     fi
 fi
 

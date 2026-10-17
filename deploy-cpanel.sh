@@ -57,10 +57,24 @@ ensure_node() {
 
     if [ -n "$VENV" ]; then
         echo "➜ A activar ambiente virtual do cPanel: $VENV"
+        # O activate do cPanel/CloudLinux não é compatível com 'set -u',
+        # e pode devolver erro sem impedir a utilização do ambiente.
+        set +u
+        set +e
         # shellcheck disable=SC1090
         source "$VENV"
-        echo "✓ Node $(node --version) / npm $(npm --version)"
-        return 0
+        local RC=$?
+        set -e
+        [ "$RC" -ne 0 ] && echo "ℹ O activate devolveu código $RC — a usar o PATH do ambiente directamente."
+        # Reforço: garantir a pasta bin do ambiente no PATH
+        export PATH="$(dirname "$VENV"):$PATH"
+        set -u
+
+        if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+            echo "✓ Node $(node --version) / npm $(npm --version)"
+            return 0
+        fi
+        echo "⚠ O ambiente do cPanel foi encontrado mas o node/npm não ficaram acessíveis."
     fi
 
     cat <<'EOF'
