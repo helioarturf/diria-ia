@@ -42,6 +42,9 @@ export interface Lawyer {
   website?: string;
   verifiedOaa?: boolean;
   registeredAt?: string;
+  rating?: number;
+  reviewCount?: number;
+  isFavorite?: boolean;
 }
 
 export interface LegalCitation {
@@ -142,3 +145,91 @@ export interface LaborCalculationResult {
   netTotal: number;
   legalBasis: string;
 }
+
+export type DocumentType =
+  | 'Minuta'
+  | 'Parecer Técnico'
+  | 'Cálculo Laboral'
+  | 'Contrato'
+  | 'Petição Forense'
+  | 'Notificação';
+
+export type DocumentStatus = 'Finalizado' | 'Rascunho' | 'Em Revisão';
+
+export interface UserDocument {
+  id: string;
+  title: string;
+  category: string;
+  type: DocumentType;
+  createdAt: string;
+  updatedAt: string;
+  status: DocumentStatus;
+  content: string;
+  description?: string;
+  fileSize?: string;
+  tags?: string[];
+  lawyerName?: string;
+  consultationId?: string;
+}
+
+export interface LawyerReview {
+  id: string;
+  lawyerId: string;
+  lawyerName?: string;
+  authorName: string;
+  authorRole?: string;
+  rating: number; // 1 to 5
+  comment: string;
+  date: string;
+  tags?: string[];
+  criteria?: {
+    clarity: number; // 1 to 5 (Clareza jurídica)
+    efficiency: number; // 1 to 5 (Agilidade e prontidão)
+    resolution: number; // 1 to 5 (Eficácia no caso)
+  };
+  verified?: boolean;
+}
+
+export type ConsultationRequestStatus = 'Pendente' | 'Confirmada' | 'Realizada' | 'Recusada';
+
+export interface ConsultationRequest {
+  id: string;
+  lawyerId: string;
+  lawyerName: string;
+  clientName: string;
+  clientPhone: string;
+  preferredDate: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  modality: 'Presencial' | 'Videoconferência (Online)';
+  subject: string;
+  status: ConsultationRequestStatus;
+  createdAt: string;
+  caseNotes?: string;
+  estimatedFee?: string;
+  rejectReason?: string;
+}
+
+export type ScheduleEventType =
+  | 'Audiência Judicial'
+  | 'Mediação IGT'
+  | 'Consulta Cliente'
+  | 'Diligência Notarial / Registo'
+  | 'Reunião de Sócios';
+
+export type ScheduleEventStatus = 'Agendado' | 'Realizado' | 'Adiado' | 'Cancelado';
+
+export interface LawyerScheduleEvent {
+  id: string;
+  lawyerId: string;
+  lawyerName?: string;
+  title: string;
+  type: ScheduleEventType;
+  date: string;
+  time: string;
+  location: string;
+  clientName?: string;
+  status: ScheduleEventStatus;
+  notes?: string;
+}
+

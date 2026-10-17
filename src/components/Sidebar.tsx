@@ -22,6 +22,8 @@ interface SidebarProps {
   onOpenProfile?: () => void;
   onOpenAuth?: (initialMode?: 'login' | 'register') => void;
   isLoggedIn?: boolean;
+  onOpenUserDashboard?: () => void;
+  onOpenLawyerPortal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -45,10 +47,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfile,
   onOpenAuth,
   isLoggedIn = false,
+  onOpenUserDashboard,
+  onOpenLawyerPortal,
 }) => {
   const showCollapsed = isCollapsedDesktop && !isOpenMobile;
+  const isLawyer = userProfile?.role === 'Advogado / Jurista';
 
   const legalTools = [
+    {
+      id: 'dashboard',
+      label: 'Painel do Utente',
+      badge: !isLoggedIn ? 'Requer Login' : 'Dossier',
+      badgeClass: !isLoggedIn
+        ? 'text-amber-800 bg-amber-50 border border-amber-200/80 font-medium'
+        : 'bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/60',
+      icon: !isLoggedIn ? 'lock' : 'space_dashboard',
+      iconColor: 'text-emerald-700',
+      iconDefaultColor: !isLoggedIn
+        ? 'text-slate-400 group-hover:text-amber-600'
+        : 'text-emerald-700 group-hover:text-emerald-800',
+      title: !isLoggedIn
+        ? 'Painel do Utente (Disponível apenas para utilizadores autenticados)'
+        : `Painel do Utente (Atribuição: ${userProfile?.role || 'Utente'})`,
+      onClick: onOpenUserDashboard || onOpenSettings,
+      isPrimary: true,
+    },
+    {
+      id: 'lawyerPortal',
+      label: 'Painel do Advogado',
+      badge: !isLoggedIn ? 'Requer Login' : isLawyer ? 'OAA Pro' : 'Restrito OAA',
+      badgeClass: !isLoggedIn
+        ? 'text-slate-500 bg-slate-100 border border-slate-200 font-medium'
+        : isLawyer
+        ? 'bg-amber-100 text-amber-900 font-bold border border-amber-300'
+        : 'bg-slate-100 text-slate-500 border border-slate-200',
+      icon: !isLoggedIn ? 'lock' : !isLawyer ? 'shield_lock' : 'gavel',
+      iconColor: 'text-amber-700',
+      iconDefaultColor: !isLoggedIn
+        ? 'text-slate-400 group-hover:text-amber-700'
+        : !isLawyer
+        ? 'text-slate-400 group-hover:text-amber-700'
+        : 'text-amber-700 group-hover:text-amber-800',
+      title: !isLoggedIn
+        ? 'Painel do Advogado (Disponível apenas para utilizadores autenticados com carteira OAA)'
+        : !isLawyer
+        ? `Acesso Restrito: Exclusivo para Advogados e Sociedades OAA (Atribuição actual: ${userProfile?.role || 'Utente'})`
+        : 'Painel do Advogado & Escritório (Solicitações de consulta, agenda forense e relatórios)',
+      onClick: onOpenLawyerPortal || onOpenSettings,
+      isPrimary: true,
+    },
     {
       id: 'profile',
       label: 'Perfil & Experiência',

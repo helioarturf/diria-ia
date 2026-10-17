@@ -9,6 +9,8 @@ interface SettingsModalProps {
   onOpenProfile?: () => void;
   onOpenAuth?: (mode?: 'login' | 'register') => void;
   isLoggedIn?: boolean;
+  onOpenUserDashboard?: () => void;
+  onOpenLawyerPortal?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -19,6 +21,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenProfile,
   onOpenAuth,
   isLoggedIn = false,
+  onOpenUserDashboard,
+  onOpenLawyerPortal,
 }) => {
   const [jurisdiction, setJurisdiction] = useState('Angola (Geral - Luanda)');
   const [voiceSpeed, setVoiceSpeed] = useState('Normal (1.0x)');
@@ -96,6 +100,76 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* Painel do Utente Card */}
+          {onOpenUserDashboard && (
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-emerald-950 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-emerald-700">
+                    {!isLoggedIn ? 'lock' : 'space_dashboard'}
+                  </span>
+                  <span>Painel do Utente</span>
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-medium ${
+                    !isLoggedIn ? 'bg-amber-100 text-amber-800' : 'bg-emerald-200/60 text-emerald-900'
+                  }`}>
+                    {!isLoggedIn ? 'Requer Login' : `Atribuição: ${(userProfile?.role || 'Utente').split(' ')[0]}`}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenUserDashboard();
+                  }}
+                  className="text-xs font-semibold text-emerald-800 hover:underline cursor-pointer flex items-center gap-0.5"
+                >
+                  <span>Abrir Painel</span>
+                  <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-emerald-800/80 leading-relaxed">
+                Aceda aos seus documentos criados, histórico de consultas, directório de advogados e escritórios e submeta avaliações.
+              </p>
+            </div>
+          )}
+
+          {/* Painel do Advogado Card */}
+          {onOpenLawyerPortal && (
+            <div className="p-3 bg-slate-900 text-white rounded-xl space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-white flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-amber-400">
+                    {!isLoggedIn ? 'lock' : userProfile?.role === 'Advogado / Jurista' ? 'gavel' : 'shield_lock'}
+                  </span>
+                  <span>Painel do Advogado & Escritório</span>
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                    !isLoggedIn
+                      ? 'bg-slate-800 text-slate-300'
+                      : userProfile?.role === 'Advogado / Jurista'
+                      ? 'bg-amber-400 text-slate-950'
+                      : 'bg-slate-800 text-amber-400'
+                  }`}>
+                    {!isLoggedIn ? 'Requer Login' : userProfile?.role === 'Advogado / Jurista' ? 'OAA Pro' : 'Restrito OAA'}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenLawyerPortal();
+                  }}
+                  className="text-xs font-semibold text-amber-300 hover:underline cursor-pointer flex items-center gap-0.5"
+                >
+                  <span>Abrir Painel</span>
+                  <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Gerir solicitações de consultas de clientes, audiências, sessões IGT e relatórios analíticos de resolução.
+              </p>
+            </div>
+          )}
 
           {/* User Experience Profile Section */}
           {userProfile && (

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Lawyer } from '../types';
+import { Lawyer, ConsultationRequest } from '../types';
 
 interface ScheduleConsultationModalProps {
   lawyer: Lawyer | null;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
+  onRequestCreated?: (request: ConsultationRequest) => void;
 }
 
 export const ScheduleConsultationModal: React.FC<ScheduleConsultationModalProps> = ({
@@ -13,6 +14,7 @@ export const ScheduleConsultationModal: React.FC<ScheduleConsultationModalProps>
   isOpen,
   onClose,
   onSuccess,
+  onRequestCreated,
 }) => {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -34,8 +36,25 @@ export const ScheduleConsultationModal: React.FC<ScheduleConsultationModalProps>
 
     setIsSubmitting(true);
     setTimeout(() => {
+      const newRequest: ConsultationRequest = {
+        id: `req-${Date.now()}`,
+        lawyerId: lawyer.id,
+        lawyerName: lawyer.name,
+        clientName: clientName.trim(),
+        clientPhone: clientPhone.trim(),
+        preferredDate: preferredDate || 'A combinar',
+        modality,
+        subject: briefSubject.trim() || 'Consulta geral sobre legislação angolana',
+        status: 'Pendente',
+        createdAt: 'Hoje',
+      };
+
+      if (onRequestCreated) {
+        onRequestCreated(newRequest);
+      }
+
       setIsSubmitting(false);
-      onSuccess(`Pedido de agendamento enviado com sucesso para ${lawyer.name}! O escritório entrará em contacto nas próximas horas.`);
+      onSuccess(`Pedido de agendamento enviado com sucesso para ${lawyer.name}! O pedido já está visível no Painel do Advogado.`);
       onClose();
     }, 600);
   };

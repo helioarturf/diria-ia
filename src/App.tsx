@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Consultation, Lawyer, Message, UserProfile } from './types';
+import {
+  Consultation,
+  Lawyer,
+  Message,
+  UserProfile,
+  UserDocument,
+  LawyerReview,
+  ConsultationRequest,
+  ConsultationRequestStatus,
+  LawyerScheduleEvent,
+} from './types';
 import { INITIAL_LAWYERS } from './data/legalData';
+import {
+  INITIAL_USER_DOCUMENTS,
+  INITIAL_LAWYER_REVIEWS,
+  INITIAL_CONSULTATION_REQUESTS,
+  INITIAL_SCHEDULE_EVENTS,
+} from './data/userPortalData';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { ChatMessage } from './components/ChatMessage';
@@ -14,6 +30,9 @@ import { SettingsModal } from './components/SettingsModal';
 import { LawyerRegistrationModal } from './components/LawyerRegistrationModal';
 import { CleanWelcomeScreen } from './components/CleanWelcomeScreen';
 import { UserProfileModal } from './components/UserProfileModal';
+import { UserDashboardModal } from './components/UserDashboardModal';
+import { LawyerPortalModal } from './components/LawyerPortalModal';
+import { AuthModal, AuthUser } from './components/AuthModal';
 
 const DEFAULT_USER_PROFILE: UserProfile = {
   id: 'user-default',
@@ -180,14 +199,30 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Modals
+  // Modals & Portals
   const [isLegalBasesOpen, setIsLegalBasesOpen] = useState(false);
   const [isLawyersOpen, setIsLawyersOpen] = useState(false);
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isDraftsOpen, setIsDraftsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUserDashboardOpen, setIsUserDashboardOpen] = useState(false);
+  const [isLawyerPortalOpen, setIsLawyerPortalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
+  const [authPromptMessage, setAuthPromptMessage] = useState<string | undefined>(undefined);
   const [selectedLawyerForSchedule, setSelectedLawyerForSchedule] = useState<Lawyer | null>(null);
+
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('diria_current_user');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return null;
+  });
+
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem('diria_user_profile');
@@ -198,6 +233,48 @@ export default function App() {
     return DEFAULT_USER_PROFILE;
   });
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // User Documents & Reviews
+  const [documents, setDocuments] = useState<UserDocument[]>(() => {
+    try {
+      const saved = localStorage.getItem('diria_user_documents');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_USER_DOCUMENTS;
+  });
+
+  const [reviews, setReviews] = useState<LawyerReview[]>(() => {
+    try {
+      const saved = localStorage.getItem('diria_lawyer_reviews');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_LAWYER_REVIEWS;
+  });
+
+  // Lawyer Portal: Consultation Requests & Schedule Events
+  const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>(() => {
+    try {
+      const saved = localStorage.getItem('diria_consultation_requests');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_CONSULTATION_REQUESTS;
+  });
+
+  const [scheduleEvents, setScheduleEvents] = useState<LawyerScheduleEvent[]>(() => {
+    try {
+      const saved = localStorage.getItem('diria_schedule_events');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_SCHEDULE_EVENTS;
+  });
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -226,9 +303,228 @@ export default function App() {
     }
   }, [userProfile]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('diria_user_documents', JSON.stringify(documents));
+    } catch {
+      // storage quota or disabled
+    }
+  }, [documents]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('diria_lawyer_reviews', JSON.stringify(reviews));
+    } catch {
+      // storage quota or disabled
+    }
+  }, [reviews]);
+
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem('diria_current_user', JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem('diria_current_user');
+      }
+    } catch {
+      // storage quota or disabled
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('diria_consultation_requests', JSON.stringify(consultationRequests));
+    } catch {
+      // storage quota or disabled
+    }
+  }, [consultationRequests]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('diria_schedule_events', JSON.stringify(scheduleEvents));
+    } catch {
+      // storage quota or disabled
+    }
+  }, [scheduleEvents]);
+
+  const handleCreateConsultationRequest = (newRequest: ConsultationRequest) => {
+    setConsultationRequests((prev) => [newRequest, ...prev]);
+  };
+
+  const handleUpdateRequestStatus = (
+    requestId: string,
+    newStatus: ConsultationRequestStatus,
+    details?: {
+      scheduledDate?: string;
+      scheduledTime?: string;
+      caseNotes?: string;
+      rejectReason?: string;
+      estimatedFee?: string;
+    }
+  ) => {
+    setConsultationRequests((prev) =>
+      prev.map((r) => {
+        if (r.id === requestId) {
+          return {
+            ...r,
+            status: newStatus,
+            ...(details?.scheduledDate ? { scheduledDate: details.scheduledDate } : {}),
+            ...(details?.scheduledTime ? { scheduledTime: details.scheduledTime } : {}),
+            ...(details?.caseNotes !== undefined ? { caseNotes: details.caseNotes } : {}),
+            ...(details?.rejectReason ? { rejectReason: details.rejectReason } : {}),
+            ...(details?.estimatedFee ? { estimatedFee: details.estimatedFee } : {}),
+          };
+        }
+        return r;
+      })
+    );
+  };
+
+  const handleAddScheduleEvent = (newEventData: Omit<LawyerScheduleEvent, 'id'>) => {
+    const newEvent: LawyerScheduleEvent = {
+      ...newEventData,
+      id: `ev-${Date.now()}`,
+    };
+    setScheduleEvents((prev) => [newEvent, ...prev]);
+  };
+
+  const handleUpdateScheduleEventStatus = (
+    eventId: string,
+    newStatus: 'Agendado' | 'Realizado' | 'Adiado' | 'Cancelado'
+  ) => {
+    setScheduleEvents((prev) =>
+      prev.map((ev) => (ev.id === eventId ? { ...ev, status: newStatus } : ev))
+    );
+  };
+
   const handleSaveProfile = (newProfile: UserProfile) => {
     setUserProfile(newProfile);
     showToast(`Perfil de experiência actualizado: ${newProfile.role} (${newProfile.responseStyle})`);
+  };
+
+  const handleSaveDocument = (doc: UserDocument) => {
+    setDocuments((prev) => {
+      const exists = prev.some((d) => d.id === doc.id);
+      if (exists) {
+        return prev.map((d) => (d.id === doc.id ? doc : d));
+      }
+      return [doc, ...prev];
+    });
+    showToast(`Documento "${doc.title}" gravado com sucesso!`);
+  };
+
+  const handleDeleteDocument = (docId: string) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    showToast('Documento eliminado do seu painel.');
+  };
+
+  const handleAddReview = (newRevData: Omit<LawyerReview, 'id' | 'date'>) => {
+    const newRev: LawyerReview = {
+      ...newRevData,
+      id: `rev-${Date.now()}`,
+      date: 'Hoje',
+    };
+    setReviews((prev) => [newRev, ...prev]);
+
+    setLawyers((prev) =>
+      prev.map((l) => {
+        if (l.id === newRevData.lawyerId) {
+          const allForThisLawyer = [newRev, ...reviews.filter((r) => r.lawyerId === l.id)];
+          const avg =
+            allForThisLawyer.reduce((acc, curr) => acc + curr.rating, 0) /
+            allForThisLawyer.length;
+          return {
+            ...l,
+            rating: Math.round(avg * 10) / 10,
+            reviewCount: (l.reviewCount || 0) + 1,
+          };
+        }
+        return l;
+      })
+    );
+
+    showToast(`Avaliação submetida para ${newRevData.lawyerName || 'o profissional'}!`);
+  };
+
+  const handleOpenAuth = (mode: 'login' | 'register' = 'login', promptMessage?: string) => {
+    setAuthInitialMode(mode);
+    setAuthPromptMessage(promptMessage);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleOpenUserDashboard = () => {
+    if (!currentUser) {
+      handleOpenAuth(
+        'login',
+        'O Painel do Utente é exclusivo para utilizadores autenticados. Inicie sessão ou efectue o cadastro para aceder aos seus documentos guardados, histórico e avaliações.'
+      );
+      return;
+    }
+    setIsUserDashboardOpen(true);
+  };
+
+  const handleOpenLawyerPortal = () => {
+    if (!currentUser) {
+      handleOpenAuth(
+        'login',
+        'O Painel Profissional do Advogado & Escritório é reservado a juristas e sociedades da OAA. Inicie sessão para gerir a sua carteira, solicitações e agenda.'
+      );
+      return;
+    }
+    // If logged in, open the modal (its internal Attribution Guard will handle role enforcement and provide 1-click account switch or card upgrade if the user is not a lawyer)
+    setIsLawyerPortalOpen(true);
+  };
+
+  const handleUpgradeToLawyer = (oaaNumber?: string) => {
+    if (!currentUser) return;
+    const updatedUser: AuthUser = {
+      ...currentUser,
+      role: 'Advogado / Jurista',
+      experienceLevel: 'Avançado / Especialista',
+      responseStyle: 'Parecer Técnico Forense',
+      oaaNumber: oaaNumber || currentUser.oaaNumber || '4892/OAA',
+      isRegisteredLawyer: true,
+    };
+    handleUpdateUser(updatedUser);
+    showToast('Atribuição de conta actualizada com sucesso para Advogado / Jurista (OAA)!');
+  };
+
+  const handleLogin = (user: AuthUser) => {
+    setCurrentUser(user);
+    setUserProfile((prev) => ({
+      ...prev,
+      name: user.name,
+      role: user.role,
+      experienceLevel: user.experienceLevel,
+      responseStyle: user.responseStyle,
+      province: user.province,
+      email: user.email,
+      phone: user.phone,
+      oaaNumber: user.oaaNumber,
+    }));
+    setIsAuthModalOpen(false);
+    showToast(`Sessão iniciada como ${user.name}!`);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    showToast('Sessão terminada.');
+  };
+
+  const handleUpdateUser = (updatedUser: AuthUser) => {
+    setCurrentUser(updatedUser);
+    setUserProfile((prev) => ({
+      ...prev,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      experienceLevel: updatedUser.experienceLevel,
+      responseStyle: updatedUser.responseStyle,
+      province: updatedUser.province,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      oaaNumber: updatedUser.oaaNumber,
+    }));
+    showToast('Dados da conta actualizados.');
   };
 
   const handleRegisterLawyer = (newLawyer: Lawyer) => {
@@ -575,6 +871,10 @@ export default function App() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         userProfile={userProfile}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenUserDashboard={handleOpenUserDashboard}
+        onOpenLawyerPortal={handleOpenLawyerPortal}
+        onOpenAuth={handleOpenAuth}
+        isLoggedIn={!!currentUser}
       />
 
       {/* MAIN CANVAS */}
@@ -591,6 +891,10 @@ export default function App() {
           onOpenDrafts={() => setIsDraftsOpen(true)}
           userProfile={userProfile}
           onOpenProfile={() => setIsProfileModalOpen(true)}
+          onOpenUserDashboard={handleOpenUserDashboard}
+          onOpenLawyerPortal={handleOpenLawyerPortal}
+          onOpenAuth={handleOpenAuth}
+          isLoggedIn={!!currentUser}
         />
 
         {/* Chat Stream Scrollable Area */}
@@ -604,6 +908,10 @@ export default function App() {
               onOpenDrafts={() => setIsDraftsOpen(true)}
               userProfile={userProfile}
               onOpenProfile={() => setIsProfileModalOpen(true)}
+              onOpenUserDashboard={handleOpenUserDashboard}
+              onOpenLawyerPortal={handleOpenLawyerPortal}
+              onOpenAuth={handleOpenAuth}
+              isLoggedIn={!!currentUser}
             />
           ) : (
             <div className="max-w-3xl mx-auto w-full flex flex-col gap-6 pb-36">
@@ -700,6 +1008,7 @@ export default function App() {
         isOpen={!!selectedLawyerForSchedule}
         onClose={() => setSelectedLawyerForSchedule(null)}
         onSuccess={(msg) => showToast(msg)}
+        onRequestCreated={handleCreateConsultationRequest}
       />
 
       <SettingsModal
@@ -708,6 +1017,10 @@ export default function App() {
         onClearHistory={handleClearAllHistory}
         userProfile={userProfile}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenUserDashboard={handleOpenUserDashboard}
+        onOpenLawyerPortal={handleOpenLawyerPortal}
+        onOpenAuth={handleOpenAuth}
+        isLoggedIn={!!currentUser}
       />
 
       <UserProfileModal
@@ -715,6 +1028,65 @@ export default function App() {
         onClose={() => setIsProfileModalOpen(false)}
         profile={userProfile}
         onSaveProfile={handleSaveProfile}
+      />
+
+      <UserDashboardModal
+        isOpen={isUserDashboardOpen}
+        onClose={() => setIsUserDashboardOpen(false)}
+        currentUser={currentUser}
+        isLoggedIn={!!currentUser}
+        consultations={consultations}
+        activeConsultationId={activeConsultationId}
+        onSelectConsultation={handleSelectConsultation}
+        onNewConsultation={handleNewConsultation}
+        onDeleteConsultation={handleDeleteConsultation}
+        lawyers={lawyers}
+        reviews={reviews}
+        onAddReview={handleAddReview}
+        documents={documents}
+        onSaveDocument={handleSaveDocument}
+        onDeleteDocument={handleDeleteDocument}
+        onScheduleLawyer={handleLawyerSchedule}
+        onContactLawyer={handleLawyerContact}
+        userProfile={userProfile}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenAuth={handleOpenAuth}
+        onOpenLawyerPortal={handleOpenLawyerPortal}
+        onLogin={handleLogin}
+      />
+
+      <LawyerPortalModal
+        isOpen={isLawyerPortalOpen}
+        onClose={() => setIsLawyerPortalOpen(false)}
+        currentUser={currentUser}
+        isLoggedIn={!!currentUser}
+        lawyers={lawyers}
+        requests={consultationRequests}
+        onUpdateRequestStatus={handleUpdateRequestStatus}
+        scheduleEvents={scheduleEvents}
+        onAddScheduleEvent={handleAddScheduleEvent}
+        onUpdateScheduleEventStatus={handleUpdateScheduleEventStatus}
+        reviews={reviews}
+        userProfile={userProfile}
+        onOpenLawyerRegistration={() => setIsRegistrationOpen(true)}
+        onOpenAuth={handleOpenAuth}
+        onSwitchToUserDashboard={() => {
+          setIsLawyerPortalOpen(false);
+          handleOpenUserDashboard();
+        }}
+        onUpgradeToLawyer={handleUpgradeToLawyer}
+        onLogin={handleLogin}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        onUpdateUser={handleUpdateUser}
+        initialMode={authInitialMode}
+        promptMessage={authPromptMessage}
       />
     </div>
   );

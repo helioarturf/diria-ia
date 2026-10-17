@@ -25,9 +25,10 @@ interface AuthModalProps {
   onLogout: () => void;
   onUpdateUser: (user: AuthUser) => void;
   initialMode?: 'login' | 'register';
+  promptMessage?: string;
 }
 
-const DEMO_ACCOUNTS: {
+export const DEMO_ACCOUNTS: {
   email: string;
   pass: string;
   user: AuthUser;
@@ -118,6 +119,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLogout,
   onUpdateUser,
   initialMode = 'login',
+  promptMessage,
 }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'profile'>(() => {
     if (currentUser) return 'profile';
@@ -423,6 +425,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
+          {promptMessage && !currentUser && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/90 text-amber-900 text-xs flex items-start gap-2 shadow-2xs">
+              <span className="material-symbols-outlined text-[18px] text-amber-600 shrink-0 mt-0.5">lock</span>
+              <div className="leading-relaxed">
+                <strong>Acesso Restrito:</strong> {promptMessage}
+              </div>
+            </div>
+          )}
+
           {/* ===================== MODE: LOGIN ===================== */}
           {mode === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">

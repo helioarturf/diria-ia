@@ -11,6 +11,8 @@ interface CleanWelcomeScreenProps {
   onOpenProfile?: () => void;
   onOpenAuth?: (initialMode?: 'login' | 'register') => void;
   isLoggedIn?: boolean;
+  onOpenUserDashboard?: () => void;
+  onOpenLawyerPortal?: () => void;
 }
 
 export const CleanWelcomeScreen: React.FC<CleanWelcomeScreenProps> = ({
@@ -23,6 +25,8 @@ export const CleanWelcomeScreen: React.FC<CleanWelcomeScreenProps> = ({
   onOpenProfile,
   onOpenAuth,
   isLoggedIn = false,
+  onOpenUserDashboard,
+  onOpenLawyerPortal,
 }) => {
   const getSuggestionsForProfile = () => {
     const role = userProfile?.role || 'Cidadão / Utente';
@@ -208,6 +212,62 @@ export const CleanWelcomeScreen: React.FC<CleanWelcomeScreenProps> = ({
 
         {/* Quick Tools Pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+          {onOpenUserDashboard && (
+            <button
+              onClick={onOpenUserDashboard}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer ${
+                !isLoggedIn
+                  ? 'bg-slate-900 hover:bg-slate-800 text-white'
+                  : 'bg-emerald-900 hover:bg-emerald-800 text-white'
+              }`}
+              title={
+                !isLoggedIn
+                  ? 'Painel do Utente (Disponível para utilizadores autenticados)'
+                  : `Painel do Utente (Atribuição: ${userProfile?.role || 'Utente'})`
+              }
+            >
+              <span className="material-symbols-outlined text-[15px] text-emerald-400">
+                {!isLoggedIn ? 'lock' : 'space_dashboard'}
+              </span>
+              <span>Painel do Utente</span>
+              {!isLoggedIn && (
+                <span className="text-[10px] text-emerald-300 font-normal">Requer Login</span>
+              )}
+            </button>
+          )}
+
+          {onOpenLawyerPortal && (
+            <button
+              onClick={onOpenLawyerPortal}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer ${
+                !isLoggedIn
+                  ? 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700'
+                  : userProfile?.role === 'Advogado / Jurista'
+                  ? 'bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800'
+                  : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600'
+              }`}
+              title={
+                !isLoggedIn
+                  ? 'Painel do Advogado (Requer Início de Sessão Profissional OAA)'
+                  : userProfile?.role === 'Advogado / Jurista'
+                  ? 'Painel do Advogado & Escritório (OAA Pro)'
+                  : `Acesso Restrito: Exclusivo para Advogados OAA (Atribuição actual: ${userProfile?.role || 'Utente'})`
+              }
+            >
+              <span className="material-symbols-outlined text-[15px] text-amber-500">
+                {!isLoggedIn ? 'lock' : userProfile?.role === 'Advogado / Jurista' ? 'gavel' : 'shield_lock'}
+              </span>
+              <span>Painel do Advogado</span>
+              {userProfile?.role === 'Advogado / Jurista' ? (
+                <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded text-[9px] font-mono font-bold">OAA</span>
+              ) : (
+                <span className="text-[10px] text-slate-400 font-normal">
+                  {!isLoggedIn ? 'Requer Login' : 'Restrito OAA'}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onOpenCalculator}
             className="px-3 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"

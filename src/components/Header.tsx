@@ -14,6 +14,8 @@ interface HeaderProps {
   onOpenProfile?: () => void;
   onOpenAuth?: (initialMode?: 'login' | 'register') => void;
   isLoggedIn?: boolean;
+  onOpenUserDashboard?: () => void;
+  onOpenLawyerPortal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenAuth,
   isLoggedIn = false,
+  onOpenUserDashboard,
+  onOpenLawyerPortal,
 }) => {
   return (
     <header className="h-12 border-b border-slate-200/60 px-4 sm:px-6 bg-white/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
@@ -53,6 +57,29 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Cadastrar</span>
             </button>
           </div>
+        )}
+
+        {/* Painel CTA only for logged in users, tailored by role */}
+        {isLoggedIn && onOpenUserDashboard && (
+          <button
+            onClick={onOpenUserDashboard}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors cursor-pointer text-[11px] font-semibold border border-slate-200/80"
+            title="Abrir Painel do Utente (Documentos, Consultas e Juristas)"
+          >
+            <span className="material-symbols-outlined text-[15px] text-emerald-600">space_dashboard</span>
+            <span className="hidden sm:inline">Painel do Utente</span>
+          </button>
+        )}
+
+        {isLoggedIn && userProfile?.role === 'Advogado / Jurista' && onOpenLawyerPortal && (
+          <button
+            onClick={onOpenLawyerPortal}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-colors cursor-pointer text-[11px] font-semibold shadow-2xs"
+            title="Abrir Painel do Advogado & Escritório (Solicitações, Agenda e Relatórios)"
+          >
+            <span className="material-symbols-outlined text-[15px] text-amber-400">gavel</span>
+            <span className="hidden sm:inline">Painel do Advogado</span>
+          </button>
         )}
 
         {/* User profile / account chip */}
