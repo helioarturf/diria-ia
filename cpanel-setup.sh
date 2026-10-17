@@ -15,6 +15,10 @@ CPANEL_USER=$(whoami)
 echo "➜ Utilizador cPanel detectado: $CPANEL_USER"
 
 # 2. Definir nomes padrão para o cPanel
+APP_ROOT="${PWD#"$HOME"/}"
+case "$APP_ROOT" in
+    /*) APP_ROOT="$(basename "$PWD")" ;;   # PWD fora do HOME: usar só o nome da pasta
+esac
 DB_NAME="${CPANEL_USER}_diria"
 DB_USER="${CPANEL_USER}_diria"
 DB_PASS="DirIA_${CPANEL_USER}_$(date +%s | tail -c 5)!"
@@ -47,8 +51,10 @@ DB_NAME=$DB_NAME
 # Utilizador cPanel
 CPANEL_USER=$CPANEL_USER
 
-# Porta do Servidor
-PORT=3000
+# Chave da API Gemini (obrigatória para as respostas de IA)
+GEMINI_API_KEY=${GEMINI_API_KEY:-SUBSTITUI_PELA_TUA_CHAVE}
+
+# Ambiente (Passenger define a porta automaticamente)
 NODE_ENV=production
 EOF
     echo "✓ Ficheiro .env criado com sucesso."
@@ -56,22 +62,67 @@ else
     echo "ℹ Ficheiro .env já existente preservado."
 fi
 
-# 5. Executar o provisionamento e migração do DirIA
-echo "➜ Inicializando tabelas e migrações do DirIA..."
-if command -v node >/dev/null 2>&1; then
-    node -e "
-      import('./server/db.ts').then(async m => {
-        const res = await m.dbManager.autoProvision();
-        console.log('✓ Estado do Banco:', res.message);
-        process.exit(0);
-      }).catch(err => {
-        console.log('ℹ Modo Autocontido Activo:', err.message);
-        process.exit(0);
+# 5. Activar ambiente Node do cPanel (se necessário)
+if ! command -v node >/dev/null 2>&1; then
+    REL="${PWD#"$HOME"/}"
+    VENV=""
+    for cand in "$HOME/nodevenv/$REL"/*/bin/activate; do
+        [ -f "$cand" ] && VENV="$cand" && break
+    done
+    if [ -z "$VENV" ] && [ -d "$HOME/nodevenv" ]; then
+        VENV=$(find "$HOME/nodevenv" -maxdepth 6 -type f -name activate -path '*/bin/*' 2>/dev/null | sort -V | tail -1)
+    fi
+    if [ -n "$VENV" ]; then
+        echo "➜ A activar ambiente Node do cPanel: $VENV"
+        # shellcheck disable=SC1090
+        source "$VENV"
+    fi
+fi
+
+# 6. Validar ligação MySQL e preparar tabelas
+echo "➜ Verificando ligação ao banco de dados $DB_NAME..."
+
+set -a
+# shellcheck disable=SC1091
+. ./.env 2>/dev/null || true
+set +a
+
+DB_OK=""
+if command -v node >/dev/null 2>&1 && [ -d node_modules/mysql2 ]; then
+    if node --input-type=module -e "
+      import mysql from 'mysql2/promise';
+      const c = await mysql.createConnection({
+        host: process.env.DB_HOST || 'localhost',
+        port: Number(process.env.DB_PORT || 3306),
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
       });
-    " 2>/dev/null || echo "✓ Base de dados autocontida pronta!"
+      await c.query('SELECT 1');
+      await c.end();
+    " >/dev/null 2>&1; then
+        DB_OK="sim"
+    fi
+fi
+if [ -z "$DB_OK" ] && command -v mysql >/dev/null 2>&1; then
+    if mysql -h "${DB_HOST:-localhost}" -u "$DB_USER" -p"$DB_PASSWORD" -e "USE \`$DB_NAME\`;" >/dev/null 2>&1; then
+        DB_OK="sim"
+    fi
+fi
+
+if [ "$DB_OK" = "sim" ]; then
+    echo "✓ Ligação MySQL validada (utilizador: $DB_USER, base: $DB_NAME)."
+    echo "  As tabelas do DirIA são criadas automaticamente no 1.º arranque da aplicação."
+else
+    echo "⚠ Não foi possível validar a ligação MySQL agora."
+    echo "  As tabelas serão criadas automaticamente no 1.º arranque da aplicação"
+    echo "  (cPanel → Setup Node.js App). Até lá, o DirIA usa o modo autocontido."
 fi
 
 echo "=========================================================="
 echo "🎉 DirIA Angola configurado com sucesso no cPanel!"
-echo "Acesse a aplicação pelo navegador para iniciar."
+echo "Próximo passo: criar a app em cPanel → Setup Node.js App"
+echo "  • Application root: $APP_ROOT"
+echo "  • Application startup file: server.js"
+echo "e depois executar:  ./deploy-cpanel.sh"
 echo "=========================================================="

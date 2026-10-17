@@ -43,6 +43,7 @@ ensure_node() {
     echo "➜ npm não está no PATH — a procurar ambiente Node do cPanel..."
 
     local VENV="" REL="${PWD#"$HOME"/}"
+    case "$REL" in /*) REL="$(basename "$PWD")" ;; esac
 
     # 1) ambiente virtual correspondente a esta pasta
     for cand in "$HOME/nodevenv/$REL"/*/bin/activate; do
