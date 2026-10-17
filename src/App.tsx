@@ -33,6 +33,8 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { UserDashboardModal } from './components/UserDashboardModal';
 import { LawyerPortalModal } from './components/LawyerPortalModal';
 import { AuthModal, AuthUser } from './components/AuthModal';
+import { LandingPage } from './components/LandingPage';
+import { CpanelDatabaseModal } from './components/CpanelDatabaseModal';
 
 const DEFAULT_USER_PROFILE: UserProfile = {
   id: 'user-default',
@@ -200,6 +202,15 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modals & Portals
+  const [currentView, setCurrentView] = useState<'landing' | 'app'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'app') return 'app';
+      if (params.get('view') === 'landing') return 'landing';
+    }
+    return 'landing';
+  });
+  const [isCpanelModalOpen, setIsCpanelModalOpen] = useState(false);
   const [isLegalBasesOpen, setIsLegalBasesOpen] = useState(false);
   const [isLawyersOpen, setIsLawyersOpen] = useState(false);
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
@@ -564,6 +575,31 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleEnterApp = () => {
+    setCurrentView('app');
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '?view=app');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleReturnToLanding = () => {
+    setCurrentView('landing');
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setCurrentView(params.get('view') === 'app' ? 'app' : 'landing');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const activeConsultation =
     consultations.find((c) => c.id === activeConsultationId) || consultations[0];
 
@@ -842,7 +878,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-[#f8fafc] text-slate-900 font-sans antialiased h-screen flex overflow-hidden">
+    <>
       {/* Toast notification */}
       {toastMessage && (
         <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
@@ -851,59 +887,57 @@ export default function App() {
         </div>
       )}
 
-      {/* MINIMALIST SLIM SIDEBAR */}
-      <Sidebar
-        consultations={consultations}
-        activeConsultationId={activeConsultationId}
-        onSelectConsultation={handleSelectConsultation}
-        onNewConsultation={handleNewConsultation}
-        onDeleteConsultation={handleDeleteConsultation}
-        onExportConsultation={handleExportConsultation}
-        isOpenMobile={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        isCollapsedDesktop={isSidebarCollapsed}
-        onToggleCollapseDesktop={() => setIsSidebarCollapsed((prev) => !prev)}
-        onOpenLegalBases={() => setIsLegalBasesOpen(true)}
-        onOpenLawyersDirectory={() => setIsLawyersOpen(true)}
-        onOpenLawyerRegistration={() => setIsRegistrationOpen(true)}
-        onOpenCalculator={() => setIsCalculatorOpen(true)}
-        onOpenDrafts={() => setIsDraftsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        userProfile={userProfile}
-        onOpenProfile={() => setIsProfileModalOpen(true)}
-        onOpenUserDashboard={handleOpenUserDashboard}
-        onOpenLawyerPortal={handleOpenLawyerPortal}
-        onOpenAuth={handleOpenAuth}
-        isLoggedIn={!!currentUser}
-      />
-
-      {/* MAIN CANVAS */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#fafafa] relative">
-        {/* Ultra-Clean Top Bar with User Profile */}
-        <Header
-          consultation={activeConsultation}
-          onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
-          isCollapsedDesktop={isSidebarCollapsed}
-          onToggleDesktopSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
-          onNewConsultation={handleNewConsultation}
-          onExport={handleExportConsultation}
+      {currentView === 'landing' ? (
+        <LandingPage
+          onEnterApp={handleEnterApp}
+          onOpenLegalBases={() => setIsLegalBasesOpen(true)}
+          onOpenLawyersDirectory={() => setIsLawyersOpen(true)}
           onOpenCalculator={() => setIsCalculatorOpen(true)}
           onOpenDrafts={() => setIsDraftsOpen(true)}
-          userProfile={userProfile}
-          onOpenProfile={() => setIsProfileModalOpen(true)}
-          onOpenUserDashboard={handleOpenUserDashboard}
-          onOpenLawyerPortal={handleOpenLawyerPortal}
+          onOpenRegistration={() => setIsRegistrationOpen(true)}
           onOpenAuth={handleOpenAuth}
-          isLoggedIn={!!currentUser}
+          onOpenCpanelModal={() => setIsCpanelModalOpen(true)}
         />
+      ) : (
+        <div className="bg-[#f8fafc] text-slate-900 font-sans antialiased h-screen flex overflow-hidden">
+          {/* MINIMALIST SLIM SIDEBAR */}
+          <Sidebar
+            consultations={consultations}
+            activeConsultationId={activeConsultationId}
+            onSelectConsultation={handleSelectConsultation}
+            onNewConsultation={handleNewConsultation}
+            onDeleteConsultation={handleDeleteConsultation}
+            onExportConsultation={handleExportConsultation}
+            isOpenMobile={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
+            isCollapsedDesktop={isSidebarCollapsed}
+            onToggleCollapseDesktop={() => setIsSidebarCollapsed((prev) => !prev)}
+            onOpenLegalBases={() => setIsLegalBasesOpen(true)}
+            onOpenLawyersDirectory={() => setIsLawyersOpen(true)}
+            onOpenLawyerRegistration={() => setIsRegistrationOpen(true)}
+            onOpenCalculator={() => setIsCalculatorOpen(true)}
+            onOpenDrafts={() => setIsDraftsOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            userProfile={userProfile}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenUserDashboard={handleOpenUserDashboard}
+            onOpenLawyerPortal={handleOpenLawyerPortal}
+            onOpenAuth={handleOpenAuth}
+            isLoggedIn={!!currentUser}
+            onReturnToLanding={handleReturnToLanding}
+            onOpenCpanelModal={() => setIsCpanelModalOpen(true)}
+          />
 
-        {/* Chat Stream Scrollable Area */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 custom-scroll flex flex-col">
-          {activeConsultation.messages.length === 0 ? (
-            <CleanWelcomeScreen
-              onSelectPrompt={(prompt) => handleSendMessage(prompt)}
-              onOpenLegalBases={() => setIsLegalBasesOpen(true)}
-              onOpenLawyersDirectory={() => setIsLawyersOpen(true)}
+          {/* MAIN CANVAS */}
+          <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#fafafa] relative">
+            {/* Ultra-Clean Top Bar with User Profile */}
+            <Header
+              consultation={activeConsultation}
+              onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+              isCollapsedDesktop={isSidebarCollapsed}
+              onToggleDesktopSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
+              onNewConsultation={handleNewConsultation}
+              onExport={handleExportConsultation}
               onOpenCalculator={() => setIsCalculatorOpen(true)}
               onOpenDrafts={() => setIsDraftsOpen(true)}
               userProfile={userProfile}
@@ -912,7 +946,28 @@ export default function App() {
               onOpenLawyerPortal={handleOpenLawyerPortal}
               onOpenAuth={handleOpenAuth}
               isLoggedIn={!!currentUser}
+              onReturnToLanding={handleReturnToLanding}
+              onOpenCpanelModal={() => setIsCpanelModalOpen(true)}
             />
+
+            {/* Chat Stream Scrollable Area */}
+            <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 custom-scroll flex flex-col">
+              {activeConsultation.messages.length === 0 ? (
+                <CleanWelcomeScreen
+                  onSelectPrompt={(prompt) => handleSendMessage(prompt)}
+                  onOpenLegalBases={() => setIsLegalBasesOpen(true)}
+                  onOpenLawyersDirectory={() => setIsLawyersOpen(true)}
+                  onOpenCalculator={() => setIsCalculatorOpen(true)}
+                  onOpenDrafts={() => setIsDraftsOpen(true)}
+                  userProfile={userProfile}
+                  onOpenProfile={() => setIsProfileModalOpen(true)}
+                  onOpenUserDashboard={handleOpenUserDashboard}
+                  onOpenLawyerPortal={handleOpenLawyerPortal}
+                  onOpenAuth={handleOpenAuth}
+                  isLoggedIn={!!currentUser}
+                  onReturnToLanding={handleReturnToLanding}
+                  onOpenCpanelModal={() => setIsCpanelModalOpen(true)}
+                />
           ) : (
             <div className="max-w-3xl mx-auto w-full flex flex-col gap-6 pb-36">
               {activeConsultation.messages.map((msg) => (
@@ -956,8 +1011,17 @@ export default function App() {
         {/* FLOATING BOTTOM INPUT BAR */}
         <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
       </div>
+    </div>
+  )}
 
-      {/* MODALS */}
+  {/* CPANEL DATABASE MODAL */}
+  <CpanelDatabaseModal
+    isOpen={isCpanelModalOpen}
+    onClose={() => setIsCpanelModalOpen(false)}
+    onRefresh={() => showToast('Estado do banco cPanel actualizado!')}
+  />
+
+  {/* MODALS */}
       <LegalBasesModal
         isOpen={isLegalBasesOpen}
         onClose={() => setIsLegalBasesOpen(false)}
@@ -1088,6 +1152,6 @@ export default function App() {
         initialMode={authInitialMode}
         promptMessage={authPromptMessage}
       />
-    </div>
+    </>
   );
 }

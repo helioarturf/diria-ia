@@ -1,0 +1,146 @@
+{
+  "users": [
+    {
+      "id": "user-admin",
+      "name": "Administrador DirIA",
+      "email": "admin@diria.ao",
+      "role": "Advogado / Jurista",
+      "province": "Luanda",
+      "created_at": "2026-10-17T09:52:36.513Z"
+    }
+  ],
+  "consultations": [
+    {
+      "id": "consult-1",
+      "title": "Rescisão Contratual & Compensação",
+      "category": "Direito Laboral",
+      "messages": [
+        {
+          "id": "msg-1",
+          "role": "user",
+          "content": "Fui despedido sem aviso prévio após 4 anos numa empresa privada em Viana. Tenho direito legal a indemnização?",
+          "citation_law": null,
+          "citation_article": null,
+          "citation_text": null
+        },
+        {
+          "id": "msg-2",
+          "role": "assistant",
+          "content": "Sim. Nos termos da legislação laboral de Angola, a cessação do contrato promovida pelo empregador sem justa causa comprovada constitui despedimento ilícito, gerando obrigação compensatória imediata.\n\nTendo 4 anos de antiguidade, o cálculo inicial contempla o salário-base mensal multiplicado pelo coeficiente temporal, acrescido do salário de pré-aviso devido.",
+          "citation_law": "Lei Geral do Trabalho de Angola (Lei n.º 12/23)",
+          "citation_article": "Art.º 232.º",
+          "citation_text": "A cessação sem justa causa confere ao trabalhador compensação pecuniária correspondente ao tempo efectivo de serviço, acrescida do vencimento correspondente ao aviso prévio em falta e proporcionais de férias e subsídio de Natal.",
+          "complexity": "Elevada",
+          "suggestions": [
+            "Como formalizar queixa na IGT Luanda?",
+            "Minuta de interpelação para devolução de documentos e créditos"
+          ],
+          "audioDuration": "0:24"
+        }
+      ]
+    }
+  ],
+  "lawyers": [
+    {
+      "id": "lawyer-1",
+      "name": "Dr. Manuel Domingos Gaspar",
+      "oaaNumber": "OAA 3.412",
+      "location": "Luanda — Ingombota",
+      "specialty": "Direito Laboral & Contencioso Social",
+      "phone": "+244 923 445 110",
+      "email": "m.gaspar.adv@oaa.ao",
+      "photoUrl": "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=200&h=200&fit=crop&crop=face",
+      "available": 1,
+      "entityType": "Advogado Singular",
+      "province": "Luanda",
+      "address": "Rua Rainha Ginga, Edifício Rei Katyavala, 4.º Andar",
+      "bio": "Patrono com mais de 16 anos de prática forense perante as Salas de Trabalho dos Tribunais de Comarca de Luanda e Viana.",
+      "verifiedOaa": 1,
+      "rating": 4.9,
+      "reviewCount": 38
+    },
+    {
+      "id": "lawyer-2",
+      "name": "Dra. Ana Paula Tchissola",
+      "oaaNumber": "OAA 4.890",
+      "location": "Luanda — Talatona / Belas",
+      "specialty": "Direito Comercial & Societário",
+      "phone": "+244 931 880 234",
+      "email": "ana.tchissola@legalangola.co.ao",
+      "photoUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=face",
+      "available": 1,
+      "entityType": "Sociedade de Advogados / Escritório",
+      "province": "Luanda",
+      "address": "Condomínio Cidade Financeira, Bloco 2, Talatona",
+      "bio": "Especialista em investimento privado (AIPEX), constituição célere de sociedades no GUE e assessoria de fusões e aquisições.",
+      "verifiedOaa": 1,
+      "rating": 5,
+      "reviewCount": 42
+    },
+    {
+      "id": "lawyer-3",
+      "name": "Dr. Afonso Kiala",
+      "oaaNumber": "OAA 2.115",
+      "location": "Benguela — Centro",
+      "specialty": "Direito Imobiliário & Arrendamento",
+      "phone": "+244 924 112 990",
+      "email": "afonso.kiala@benguela-adv.ao",
+      "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+      "available": 1,
+      "entityType": "Advogado Singular",
+      "province": "Benguela",
+      "address": "Avenida Norton de Matos, Benguela Comarca",
+      "bio": "Mais de 20 anos na defesa de litígios fundiários, desapropriações e contratos de arrendamento sob a Lei 26/15.",
+      "verifiedOaa": 1,
+      "rating": 4.8,
+      "reviewCount": 29
+    }
+  ],
+  "user_documents": [
+    {
+      "id": "doc-1",
+      "title": "Minuta de Contrato de Arrendamento Urbano (Lei 26/15)",
+      "category": "Direito Imobiliário",
+      "type": "Minuta",
+      "status": "Finalizado",
+      "content": "CONTRATO DE ARRENDAMENTO URBANO PARA FINS HABITACIONAIS...",
+      "file_size": "24 KB",
+      "created_at": "2026-10-17T09:52:36.513Z"
+    },
+    {
+      "id": "doc-2",
+      "title": "Auto de Notificação e Queixa à IGT (Lei 12/23)",
+      "category": "Direito Laboral",
+      "type": "Petição Forense",
+      "status": "Finalizado",
+      "content": "À INSPECÇÃO GERAL DO TRABALHO DE LUANDA...",
+      "file_size": "18 KB",
+      "created_at": "2026-10-17T09:52:36.513Z"
+    }
+  ],
+  "consultation_requests": [],
+  "lawyer_reviews": [],
+  "labor_simulations": [
+    {
+      "id": "sim-1",
+      "monthly_salary": 250000,
+      "years_service": 4,
+      "months_service": 0,
+      "notice_given": 0,
+      "compensation_amount": 1000000,
+      "gross_total": 1250000,
+      "net_total": 1145000,
+      "legal_basis": "Lei Geral do Trabalho Lei 12/23",
+      "created_at": "2026-10-17T09:52:36.513Z"
+    }
+  ],
+  "cpanel_system_logs": [
+    {
+      "id": 1,
+      "event_type": "INITIAL_BOOT",
+      "message": "Banco de dados autocontido inicializado com sucesso para ambiente cPanel.",
+      "environment": "cpanel",
+      "created_at": "2026-10-17T09:52:36.513Z"
+    }
+  ]
+}

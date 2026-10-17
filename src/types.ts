@@ -233,3 +233,27 @@ export interface LawyerScheduleEvent {
   notes?: string;
 }
 
+export interface DatabaseStatus {
+  success: boolean;
+  mode: 'mysql' | 'self-contained' | 'not-initialized';
+  databaseName?: string;
+  host?: string;
+  port?: number | string;
+  user?: string;
+  connected: boolean;
+  tablesCount: number;
+  tables: string[];
+  seeded: boolean;
+  message: string;
+  recordsSummary?: {
+    users: number;
+    lawyers: number;
+    consultations: number;
+    documents: number;
+    laborSimulations: number;
+  };
+  cpanelDetected?: boolean;
+  cpanelUser?: string;
+  timestamp: string;
+}
+

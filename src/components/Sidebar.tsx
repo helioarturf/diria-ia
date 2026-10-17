@@ -24,6 +24,8 @@ interface SidebarProps {
   isLoggedIn?: boolean;
   onOpenUserDashboard?: () => void;
   onOpenLawyerPortal?: () => void;
+  onReturnToLanding?: () => void;
+  onOpenCpanelModal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -49,6 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isLoggedIn = false,
   onOpenUserDashboard,
   onOpenLawyerPortal,
+  onReturnToLanding,
+  onOpenCpanelModal,
 }) => {
   const showCollapsed = isCollapsedDesktop && !isOpenMobile;
   const isLawyer = userProfile?.role === 'Advogado / Jurista';
@@ -162,6 +166,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Cadastrar Jurista ou Sociedade de Advogados na OAA',
       onClick: onOpenLawyerRegistration,
     },
+    {
+      id: 'cpanel',
+      label: 'Banco cPanel (Auto)',
+      badge: 'cPanel',
+      badgeClass: 'group-hover:bg-amber-50 group-hover:text-amber-800 font-semibold',
+      icon: 'database',
+      iconColor: 'text-amber-700',
+      iconDefaultColor: 'text-amber-600 group-hover:text-amber-700',
+      title: 'Gestor e Auto-Criação de Banco no cPanel (Zero Intervenção)',
+      onClick: onOpenCpanelModal,
+    },
   ];
 
   return (
@@ -242,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={tool.id}
                   onClick={() => {
-                    tool.onClick();
+                    tool.onClick?.();
                     onCloseMobile();
                   }}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer group relative ${
@@ -307,6 +322,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* New Consultation & Export Actions */}
             <div className="flex flex-col gap-1.5">
+              {onReturnToLanding && (
+                <button
+                  onClick={onReturnToLanding}
+                  className="w-full h-8 px-3 rounded-lg border border-amber-200/90 bg-amber-50/70 hover:bg-amber-100 text-amber-950 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer mb-0.5"
+                  title="Voltar à Página Inicial (Landing Page)"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-amber-700">home</span>
+                    <span>Página Inicial</span>
+                  </div>
+                  <span className="text-[10px] text-amber-700 bg-amber-200/60 px-1.5 py-0.2 rounded font-mono">
+                    Site
+                  </span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   onNewConsultation();
@@ -418,7 +449,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={tool.id}
                     onClick={() => {
-                      tool.onClick();
+                      tool.onClick?.();
                       onCloseMobile();
                     }}
                     className="w-full text-left px-3 py-2 rounded-lg text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 flex items-center justify-between transition-colors cursor-pointer group"

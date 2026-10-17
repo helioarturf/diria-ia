@@ -4,6 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { dbManager, SQL_SCHEMA } from './server/db.js';
 
 dotenv.config();
 
@@ -297,8 +298,49 @@ Faz uma auditoria jurídica detalhada:
 });
 
 // Health check
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', jurisdiction: 'Angola', legislation: 'Lei 12/23, CRA 2010/2021' });
+app.get('/api/health', async (req: Request, res: Response) => {
+  const dbStatus = await dbManager.getStatus();
+  res.json({
+    status: 'ok',
+    jurisdiction: 'Angola',
+    legislation: 'Lei 12/23, CRA 2010/2021',
+    database: {
+      mode: dbStatus.mode,
+      connected: dbStatus.connected,
+      tablesCount: dbStatus.tablesCount,
+      databaseName: dbStatus.databaseName,
+    },
+  });
+});
+
+// GET /api/db/status - Current status of database (MySQL / Self-contained)
+app.get('/api/db/status', async (req: Request, res: Response) => {
+  try {
+    const status = await dbManager.getStatus();
+    return res.json(status);
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Erro ao verificar status do banco', details: err?.message });
+  }
+});
+
+// POST /api/db/auto-provision - Automatically create database and run migrations in cPanel
+app.post('/api/db/auto-provision', async (req: Request, res: Response) => {
+  try {
+    const config = req.body;
+    console.log('[cPanel Auto-Provision] Solicitado provisionamento automático do banco...');
+    const result = await dbManager.autoProvision(config);
+    return res.json(result);
+  } catch (err: any) {
+    console.error('[cPanel Auto-Provision Error]:', err);
+    return res.status(500).json({ error: 'Falha no auto-provisionamento do banco', details: err?.message });
+  }
+});
+
+// GET /api/db/schema-sql - Export full SQL DDL
+app.get('/api/db/schema-sql', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="diria_cpanel_schema.sql"');
+  return res.send(SQL_SCHEMA);
 });
 
 // Serve Vite dev server or static build
@@ -324,6 +366,12 @@ if (!isProduction) {
   });
 }
 
-server.listen(Number(port), '0.0.0.0', () => {
+server.listen(Number(port), '0.0.0.0', async () => {
   console.log(`Servidor DirIA Angola em execução na porta ${port}`);
+  try {
+    const initialDb = await dbManager.autoProvision();
+    console.log(`[DirIA Angola Auto-DB] Status: ${initialDb.mode.toUpperCase()} — ${initialDb.message}`);
+  } catch (dbErr: any) {
+    console.warn('[DirIA Angola Auto-DB Warning]:', dbErr?.message);
+  }
 });

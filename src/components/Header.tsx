@@ -16,6 +16,8 @@ interface HeaderProps {
   isLoggedIn?: boolean;
   onOpenUserDashboard?: () => void;
   onOpenLawyerPortal?: () => void;
+  onReturnToLanding?: () => void;
+  onOpenCpanelModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,16 +29,42 @@ export const Header: React.FC<HeaderProps> = ({
   isLoggedIn = false,
   onOpenUserDashboard,
   onOpenLawyerPortal,
+  onReturnToLanding,
+  onOpenCpanelModal,
 }) => {
   return (
     <header className="h-12 border-b border-slate-200/60 px-4 sm:px-6 bg-white/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
-      <button
-        onClick={onToggleMobileSidebar}
-        className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-        title="Abrir Menu"
-      >
-        <span className="material-symbols-outlined text-[20px]">menu</span>
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleMobileSidebar}
+          className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+          title="Abrir Menu"
+        >
+          <span className="material-symbols-outlined text-[20px]">menu</span>
+        </button>
+
+        {onReturnToLanding && (
+          <button
+            onClick={onReturnToLanding}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer font-medium text-xs border border-slate-200/60"
+            title="Voltar à Página Inicial (Landing Page)"
+          >
+            <span className="material-symbols-outlined text-[16px] text-amber-600">home</span>
+            <span className="hidden sm:inline">Página Inicial</span>
+          </button>
+        )}
+
+        {onOpenCpanelModal && (
+          <button
+            onClick={onOpenCpanelModal}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer font-medium text-[11px] border border-slate-200/60"
+            title="Gestor de Banco Autocontido cPanel"
+          >
+            <span className="material-symbols-outlined text-[15px] text-emerald-600">database</span>
+            <span>Banco cPanel</span>
+          </button>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 text-xs ml-auto">
         {/* Auth CTA if not logged in */}

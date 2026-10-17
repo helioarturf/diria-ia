@@ -13,6 +13,8 @@ interface CleanWelcomeScreenProps {
   isLoggedIn?: boolean;
   onOpenUserDashboard?: () => void;
   onOpenLawyerPortal?: () => void;
+  onReturnToLanding?: () => void;
+  onOpenCpanelModal?: () => void;
 }
 
 export const CleanWelcomeScreen: React.FC<CleanWelcomeScreenProps> = ({
@@ -27,6 +29,8 @@ export const CleanWelcomeScreen: React.FC<CleanWelcomeScreenProps> = ({
   isLoggedIn = false,
   onOpenUserDashboard,
   onOpenLawyerPortal,
+  onReturnToLanding,
+  onOpenCpanelModal,
 }) => {
   const getSuggestionsForProfile = () => {
     const role = userProfile?.role || 'Cidadão / Utente';
@@ -299,6 +303,26 @@ export const CleanWelcomeScreen: React.FC<CleanWelcomeScreenProps> = ({
             <span className="material-symbols-outlined text-[15px] text-emerald-700">verified</span>
             <span>Directório OAA</span>
           </button>
+
+          {onReturnToLanding && (
+            <button
+              onClick={onReturnToLanding}
+              className="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[15px] text-amber-700">home</span>
+              <span>Página Inicial</span>
+            </button>
+          )}
+
+          {onOpenCpanelModal && (
+            <button
+              onClick={onOpenCpanelModal}
+              className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer border border-slate-700"
+            >
+              <span className="material-symbols-outlined text-[15px] text-emerald-400">database</span>
+              <span>Banco cPanel</span>
+            </button>
+          )}
         </div>
       </div>
 
