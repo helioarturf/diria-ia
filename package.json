@@ -7,8 +7,11 @@
     "dev": "tsx server.ts",
     "start": "node server.ts",
     "build": "vite build",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=server.js --packages=external",
+    "build:all": "npm run build && npm run build:server",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "deploy:cpanel": "bash deploy-cpanel.sh",
     "lint": "tsc --noEmit",
     "setup:cpanel": "node server/cpanel-setup.js"
   },
