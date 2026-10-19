@@ -243,6 +243,7 @@ actuais, por exemplo:
 | `deploy-infinityfree.sh` falha com 530 | host/user/password FTP errados | O host está em `Control Panel → FTP Accounts` (não é o host MySQL) |
 | Workflow não envia nada | Secrets em falta | Adiciona `IF_HOST`/`IF_USER`/`IF_PASS` em Settings → Secrets |
 | Deploy automático esconde o `setup.php` | Por omissão é omitido | Dispara o workflow com `setup: true` na 1.ª vez |
+| `verify-deploy.sh` diz «inconclusiva» (exit 3) | Anti-bot da InfinityFree a interceptar o cliente | Não é erro de deploy — confirma no browser (`/` e `/api/health`) |
 
 ### Teste rápido por linha de comandos (na tua máquina)
 

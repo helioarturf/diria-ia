@@ -196,13 +196,24 @@ fi
 # --- 5. Verificação ----------------------------------------------------------
 if [ -n "$IF_DOMAIN" ]; then
   info "A verificar $IF_DOMAIN ..."
-  if bash "$ROOT_DIR/verify-deploy.sh" "$IF_DOMAIN"; then
-    ok "Deploy verificado."
-  else
-    warn "A verificação encontrou problemas (mensagem acima)."
-    warn "Se for a 1.ª instalação, abre $IF_DOMAIN/setup.php com INCLUDE_SETUP=1."
-    exit 1
-  fi
+  VERIFY_RC=0
+  bash "$ROOT_DIR/verify-deploy.sh" "$IF_DOMAIN" || VERIFY_RC=$?
+  case "$VERIFY_RC" in
+    0)
+      ok "Deploy verificado."
+      ;;
+    3)
+      # Anti-bot da InfinityFree: os ficheiros estão lá, este cliente é que
+      # não passa o desafio. Não é erro de deploy.
+      warn "Verificação inconclusiva: o anti-bot da InfinityFree bloqueou este cliente."
+      warn "Abre $IF_DOMAIN num browser para confirmar — o envio foi completo."
+      ;;
+    *)
+      warn "A verificação encontrou problemas (mensagem acima)."
+      warn "Se for a 1.ª instalação, abre $IF_DOMAIN/setup.php com INCLUDE_SETUP=1."
+      exit 1
+      ;;
+  esac
 else
   warn "IF_DOMAIN não definido — verificação automática saltada."
 fi

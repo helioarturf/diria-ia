@@ -43,12 +43,50 @@ warn()  { printf '  \033[33m!\033[0m %s\n' "$1"; [ -n "${2:-}" ] && printf '    
 info()  { printf '  \033[36m•\033[0m %s\n' "$1"; }
 head_() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
+# Headers de browser real: sem eles a InfinityFree serve logo o anti-bot e
+# todas as verificações dinâmicas ficam inconclusivas.
+UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+CURL_H=(-H "User-Agent: $UA"
+        -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        -H 'Accept-Language: pt-AO,pt;q=0.9,en;q=0.8')
+
 fetch() { # devolve "corpo\nCODIGO"
-  curl -s -L --max-time 25 -w '\n%{http_code}' "$1" 2>/dev/null
+  curl -s -L --max-time 25 --compressed "${CURL_H[@]}" -w '\n%{http_code}' "$1" 2>/dev/null
 }
 code_of() { printf '%s' "${1##*$'\n'}"; }
 body_of() { printf '%s' "${1%$'\n'*}"; }
-ctype_of() { curl -s -L --max-time 25 -o /dev/null -w '%{content_type}' "$1" 2>/dev/null; }
+ctype_of() { curl -s -L --max-time 25 --compressed "${CURL_H[@]}" -o /dev/null -w '%{content_type}' "$1" 2>/dev/null; }
+
+# A InfinityFree (openresty) intercepta pedidos dinâmicos de clientes que não
+# parecem um browser e responde com um desafio JavaScript em AES (aes.js /
+# __test). Esse desafio devolve HTTP 200, por isso SEMPRE que ele aparecer a
+# resposta é "inconclusiva" — nunca sinal de que o deploy esteja mal.
+is_challenge() {
+  case "$1" in
+    *'function toNumbers'*'__test='*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Sai com código 3 = inconclusivo (anti-bot), para o chamador não tratar como
+# falha. 0 = tudo OK; 1 = problemas reais.
+inconclusive() {
+  printf '  \033[33m!\033[0m %s\n' "$1"
+  cat <<'MSG'
+
+  A InfinityFree está a servir o anti-bot (desafio JavaScript) a este cliente.
+  Isto NÃO significa que o deploy esteja mal — os ficheiros podem estar todos
+  correctos, esta máquina é que não consegue passar o desafio.
+
+  • Abre a aplicação num browser normal: se carrega, o deploy está bem.
+  • Abre também a página /api/health no browser (deve mostrar JSON com
+    "status":"ok" e "mode":"mysql" depois da instalação).
+  • O anti-bot não bloqueia os ficheiros em /assets/ (JS e CSS), por isso um
+    HTML correcto com assets a carregar já é forte indício de deploy correcto.
+MSG
+  printf '\n\033[33mVerificação inconclusiva por anti-bot (exit 3).\033[0m\n\n'
+  exit 3
+}
 
 printf '\n\033[1mDirIA Angola · verificação de %s\033[0m\n' "$BASE"
 
@@ -62,6 +100,10 @@ if [ "$ROOT_CODE" != "200" ]; then
       "Confirma o domínio, se a conta está activa e se os ficheiros estão em htdocs/."
   printf '\n\033[31mVerificação interrompida: o site não responde.\033[0m\n\n'
   exit 1
+fi
+
+if is_challenge "$(body_of "$ROOT")"; then
+  inconclusive "O alojamento respondeu com o anti-bot em vez da aplicação"
 fi
 
 if grep -q 'id="root"' <<<"$(body_of "$ROOT")"; then
@@ -121,6 +163,10 @@ fi
 head_ '2 · Rotas da API (.htaccess)'
 HEALTH="$(fetch "$BASE/api/health")"
 HEALTH_CODE="$(code_of "$HEALTH")"
+
+if is_challenge "$(body_of "$HEALTH")"; then
+  inconclusive "/api/health foi interceptado pelo anti-bot (HTTP $HEALTH_CODE)"
+fi
 
 if [ "$HEALTH_CODE" = "200" ] && grep -q '"status":"ok"' <<<"$(body_of "$HEALTH")"; then
   ok "/api/health responde em JSON (rewrite a funcionar)"
@@ -193,7 +239,10 @@ fi
 # --- 5. Segurança -----------------------------------------------------------
 head_ '5 · Segurança pós-instalação'
 SETUP="$(fetch "$BASE/setup.php")"
-if [ "$(code_of "$SETUP")" = "200" ]; then
+if is_challenge "$(body_of "$SETUP")"; then
+  warn "Anti-bot a responder ao setup.php — não conclusivo" \
+       "Confirma no browser: deve devolver 404/403 depois de apagares o ficheiro."
+elif [ "$(code_of "$SETUP")" = "200" ]; then
   warn "O setup.php continua acessível" \
        "Apaga-o (ou descomenta o bloco <Files \"setup.php\"> no .htaccess)."
 else
@@ -201,7 +250,10 @@ else
 fi
 
 CONFIG="$(fetch "$BASE/api/config.local.php")"
-if [ "$(code_of "$CONFIG")" = "200" ]; then
+if is_challenge "$(body_of "$CONFIG")"; then
+  warn "Anti-bot a responder ao api/config.local.php — não conclusivo" \
+       "No browser tem de devolver 403/404. O anti-bot também devolve 200."
+elif [ "$(code_of "$CONFIG")" = "200" ]; then
   bad "O api/config.local.php está publicamente acessível!" \
       "O .htaccess não está a aplicar as regras — as credenciais estão expostas."
 else

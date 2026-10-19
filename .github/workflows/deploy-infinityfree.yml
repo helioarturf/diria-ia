@@ -121,9 +121,19 @@ jobs:
             echo "::notice::Secret IF_DOMAIN não definido — verificação automática saltada."
             exit 0
           fi
-          if bash verify-deploy.sh "$IF_DOMAIN"; then
-            echo "Deploy verificado com sucesso."
-          else
-            echo "::warning::A verificação encontrou problemas (ver o output acima)."
-            exit 1
-          fi
+          RC=0
+          bash verify-deploy.sh "$IF_DOMAIN" || RC=$?
+          case "$RC" in
+            0)
+              echo "Deploy verificado com sucesso."
+              ;;
+            3)
+              # O anti-bot da InfinityFree bloqueia clientes de datacenter.
+              # O envio já foi validado antes — não é falha do deploy.
+              echo "::notice::Verificação inconclusiva: anti-bot da InfinityFree. Confirma num browser."
+              ;;
+            *)
+              echo "::warning::A verificação encontrou problemas (ver o output acima)."
+              exit 1
+              ;;
+          esac

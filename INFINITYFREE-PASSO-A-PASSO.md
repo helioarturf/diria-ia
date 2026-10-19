@@ -113,6 +113,19 @@ bash verify-deploy.sh https://o-teu-dominio
 
 Verás: assets carregam, `/api/health`/`/api/db/status` correctos, `/api/chat` responde, flags de segurança (setup.php visível, config.local.php não acessível).
 
+> **Anti-bot da InfinityFree.** Os pedidos dinâmicos vindo de fora de um
+> browser real são interceptados com um desafio JavaScript (`aes.js`/`__test`)
+> que devolve `200`. Quando o verificador apanha esse desafio diz
+> **«inconclusiva»** e sai com **exit 3** — não é erro de deploy. Confirma
+> então no teu browser:
+>
+> - `https://o-teu-dominio/` → tem de carregar a aplicação;
+> - `https://o-teu-dominio/api/health` → JSON com `"status":"ok"` e, depois da
+>   instalação, `"mode":"mysql"`.
+>
+> Os ficheiros de `/assets/` (JS/CSS) **não** são bloqueados, pelo que um HTML
+> correcto com assets a carregar já é forte indício de deploy bem feito.
+
 ## 5. Finalizar
 
 Quando tudo estiver verde:
