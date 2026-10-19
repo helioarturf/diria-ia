@@ -132,6 +132,10 @@ O resultado tem de ficar assim: `htdocs/index.html`, `htdocs/api/...`,
 > Se o File Manager já tiver um `.htaccess` com conteúdo, **adiciona** as regras
 > do nosso `.htaccess` no fim em vez de apagar tudo.
 
+> O File Manager **esconde ficheiros começados por ponto**. Activa
+> **Show Hidden Files** (canto superior direito) e confirma que o `.htaccess`
+> ficou em `htdocs/`. Sem ele, `/api/*` devolve 404.
+
 > A aplicação tem de ficar na **raiz do domínio**. Para a colocar numa subpasta,
 > compila com `BASE_PATH=/diria/ npm run build:php` (ver secção «Publicar numa
 > subpasta» acima).
@@ -142,7 +146,9 @@ O resultado tem de ficar assim: `htdocs/index.html`, `htdocs/api/...`,
 2. Confirma a secção **1 · Ambiente** (verde em tudo).
 3. Preenche os dados do MySQL e a `GEMINI_API_KEY`.
 4. Clica **Instalar / Actualizar**.
-5. Clica **Testar ligação ao Gemini** (opcional, mas recomendado).
+5. Clica **Testar rotas da API** — confirma que o `.htaccess` encaminha
+   `/api/*` para o backend (a falha mais comum).
+6. Clica **Testar ligação ao Gemini** (opcional, mas recomendado).
 
 O assistente:
 - cria as 9 tabelas;
@@ -150,6 +156,17 @@ O assistente:
 - grava as credenciais em `api/config.local.php`.
 
 ### 3.4 Verificar
+
+A forma mais rápida e completa é correr o verificador a partir da tua máquina:
+
+```bash
+bash verify-deploy.sh https://o-teu-dominio
+```
+
+Ele testa (e explica o que falha): a página, os assets, o `.htaccess`, a base de
+dados, o `/api/chat` e se o `setup.php`/credenciais ficaram expostos.
+
+Alternativamente, abre os endereços à mão:
 
 | URL | Esperado |
 |---|---|
@@ -217,6 +234,10 @@ actuais, por exemplo:
 ### Teste rápido por linha de comandos (na tua máquina)
 
 ```bash
+# Diagnóstico completo, com explicação de cada falha:
+bash verify-deploy.sh https://o-teu-dominio
+
+# Ou, à mão:
 curl -s https://o-teu-dominio/api/health
 curl -s https://o-teu-dominio/api/db/status
 curl -s -X POST https://o-teu-dominio/api/chat \

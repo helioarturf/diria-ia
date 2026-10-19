@@ -68,6 +68,77 @@ if (diria_method() === 'POST') {
             $errors[] = 'Teste Gemini falhou: ' . $e->getMessage();
         }
     }
+
+    if ($action === 'test_routes') {
+        $base = diria_self_base();
+        [$code, $body] = diria_setup_get($base . '/api/health');
+        $json = json_decode($body, true);
+
+        $htaccess = __DIR__ . '/.htaccess';
+        $contents = is_file($htaccess) ? (string) @file_get_contents($htaccess) : '';
+        $hasRules = strpos($contents, 'api/index.php') !== false;
+
+        if ($code === 200 && is_array($json) && ($json['status'] ?? '') === 'ok') {
+            $messages[] = 'Rotas da API OK — ' . $base . '/api/health respondeu com status "ok" (runtime: '
+                . (string) ($json['runtime'] ?? 'php') . ').';
+        } elseif (!$hasRules) {
+            $errors[] = 'O ficheiro .htaccess não está na raiz da aplicação (ou não tem as regras de reescrita). '
+                . 'O File Manager esconde-o por omissão — activa "Show Hidden Files" no canto superior direito.';
+        } else {
+            $errors[] = 'O .htaccess está presente, mas o auto-pedido a ' . $base . '/api/health devolveu HTTP ' . $code
+                . '. Alguns alojamentos bloqueiam pedidos do servidor a si próprio — abre esse endereço no '
+                . 'navegador (ou corre: bash verify-deploy.sh ' . $base . ') para confirmar.';
+        }
+    }
+}
+
+/** Descobre a URL base desta instalação (sem a barra final). */
+function diria_self_base(): string
+{
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        || ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443);
+
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost'));
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/setup.php'));
+    $dir = rtrim(dirname($script), '/');
+
+    return ($https ? 'https' : 'http') . '://' . $host . $dir;
+}
+
+/** GET simples sem dependências: devolve [código HTTP, corpo]. */
+function diria_setup_get(string $url): array
+{
+    $body = null;
+    $code = 0;
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_USERAGENT => 'DirIA-Setup/1.0',
+        ]);
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    }
+
+    if (!is_string($body) && ini_get('allow_url_fopen')) {
+        $context = stream_context_create(['http' => [
+            'timeout' => 20,
+            'ignore_errors' => true,
+            'header' => "User-Agent: DirIA-Setup/1.0\r\n",
+        ]]);
+        $body = @file_get_contents($url, false, $context);
+        if (isset($http_response_header[0]) && preg_match('#HTTP/\S+\s+(\d{3})#', $http_response_header[0], $m)) {
+            $code = (int) $m[1];
+        }
+    }
+
+    return [$code, is_string($body) ? $body : ''];
 }
 
 $status = diria_db_status();
@@ -243,6 +314,15 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
     <a href="api/db/schema-sql" target="_blank">Esquema SQL</a>
     <a href="./">Abrir a aplicação</a>
     <p class="hint">Quando tudo estiver verde, apaga este ficheiro (<code>setup.php</code>) do alojamento.</p>
+  </div>
+
+  <div class="card">
+    <form method="post" autocomplete="off">
+      <input type="hidden" name="action" value="test_routes">
+      <p class="hint" style="margin-top:0">Confirma que o <code>.htaccess</code> está a encaminhar
+        <code>/api/*</code> para o backend PHP. É a falha mais comum no InfinityFree.</p>
+      <button type="submit" class="ghost">Testar rotas da API</button>
+    </form>
   </div>
 </div>
 </body>
