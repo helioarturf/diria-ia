@@ -8,7 +8,10 @@
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
+
+  # NOTA: não definimos RewriteBase para que este ficheiro funcione tanto na
+  # raiz do domínio como dentro de uma subpasta (as substituições são relativas
+  # à pasta onde este .htaccess está).
 
   # Nunca reescrever o próprio front controller da API (evita ciclos)
   RewriteRule ^api/index\.php$ - [L]

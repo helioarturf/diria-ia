@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DatabaseStatus } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -29,7 +30,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Fetch live DB status to display the cPanel badge
   useEffect(() => {
-    fetch('/api/db/status')
+    fetch(apiUrl('/api/db/status'))
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setDbStatus(data);
@@ -929,7 +930,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </a>
               </li>
               <li>
-                <a href="/api/db/schema-sql" download="diria_cpanel_schema.sql" className="hover:text-amber-400 transition">
+                <a href={apiUrl('/api/db/schema-sql')} download="diria_cpanel_schema.sql" className="hover:text-amber-400 transition">
                   Descarregar Esquema SQL (MySQL 8)
                 </a>
               </li>

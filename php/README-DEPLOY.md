@@ -74,6 +74,25 @@ DOCROOT=deploy-infinityfree/htdocs bash php/_test_api.sh
 
 Sem PHP instalado? Define `PHP_BIN` com o caminho do binário.
 
+### Publicar numa subpasta (ex.: `https://dominio.ao/diria/`)
+
+Por omissão a aplicação assume a **raiz do domínio** (`https://dominio.ao/`).
+Se precisares de a colocar numa subpasta, compila com `BASE_PATH`:
+
+```bash
+BASE_PATH=/diria/ npm run build:php
+```
+
+Isto faz com que:
+
+- os assets sejam pedidos a `/diria/assets/...`;
+- as chamadas à API sejam feitas a `/diria/api/...` (resolvidas em
+  `src/lib/api.ts`, que respeita a base do build).
+
+Depois coloca o conteúdo de `deploy-infinityfree/htdocs/` na subpasta
+`htdocs/diria/` do alojamento. O `.htaccess` já funciona em subpasta (não fixa
+`RewriteBase`).
+
 ---
 
 ## 3. Publicar no InfinityFree (passo a passo)
@@ -114,8 +133,8 @@ O resultado tem de ficar assim: `htdocs/index.html`, `htdocs/api/...`,
 > do nosso `.htaccess` no fim em vez de apagar tudo.
 
 > A aplicação tem de ficar na **raiz do domínio**. Para a colocar numa subpasta,
-> o frontend tem de ser recompilado com `base: './'` no `vite.config.ts` (o build
-> por omissão usa caminhos absolutos como `/assets/...`).
+> compila com `BASE_PATH=/diria/ npm run build:php` (ver secção «Publicar numa
+> subpasta» acima).
 
 ### 3.3 Instalar
 
@@ -192,6 +211,8 @@ actuais, por exemplo:
 | Respostas sem IA | Chave inválida ou API bloqueada | Testa no `setup.php`; confirma a chave no Google AI Studio |
 | Áudio não gera | Modelo TTS incorrecto | Usa `gemini-2.5-flash-preview-tts` |
 | Erro 500 no site | Sintaxe/`Options` inválidos no `.htaccess` | Comenta as linhas suspeitas e testa |
+| Página abre mas sem estilos | Publicado numa subpasta sem `BASE_PATH` | Recompila com `BASE_PATH=/subpasta/` |
+| API responde 404 na subpasta | Build sem `BASE_PATH` | As chamadas iam para `/api/...` em vez de `/subpasta/api/...` |
 
 ### Teste rápido por linha de comandos (na tua máquina)
 

@@ -4,7 +4,12 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  // BASE_PATH permite publicar numa subpasta (ex.: BASE_PATH=/diria/).
+  // Por omissão a aplicação é servida na raiz do domínio.
+  const base = process.env.BASE_PATH || '/';
+
   return {
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

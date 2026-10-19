@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lawyer } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface LawyerRegistrationModalProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ Especialidades: ${selectedSpecialties.join(', ')}
 
 Tom: sóbrio, rigoroso, respeitando os preceitos deontológicos do Estatuto da Ordem dos Advogados de Angola.`;
 
-      const res = await fetch('/api/chat', {
+      const res = await fetch(apiUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

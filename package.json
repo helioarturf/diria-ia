@@ -14,6 +14,7 @@
     "deploy:cpanel": "bash deploy-cpanel.sh",
     "build:php": "bash build-php-package.sh",
     "build:php:fast": "bash build-php-package.sh --skip-build",
+    "build:php:subpath": "bash -c 'BASE_PATH=${BASE_PATH:-/diria/} bash build-php-package.sh'",
     "test:php": "php php/_test_units.php && bash php/_test_api.sh",
     "lint": "tsc --noEmit",
     "setup:cpanel": "node server/cpanel-setup.js"

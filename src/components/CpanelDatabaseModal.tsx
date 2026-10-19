@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DatabaseStatus } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface CpanelDatabaseModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export const CpanelDatabaseModal: React.FC<CpanelDatabaseModalProps> = ({ isOpen
   const fetchStatus = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/db/status');
+      const res = await fetch(apiUrl('/api/db/status'));
       if (res.ok) {
         const data = await res.json();
         setStatus(data);
@@ -50,7 +51,7 @@ export const CpanelDatabaseModal: React.FC<CpanelDatabaseModalProps> = ({ isOpen
     setProvisioning(true);
     setFeedback(null);
     try {
-      const res = await fetch('/api/db/auto-provision', {
+      const res = await fetch(apiUrl('/api/db/auto-provision'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -307,7 +308,7 @@ export const CpanelDatabaseModal: React.FC<CpanelDatabaseModalProps> = ({ isOpen
                 </button>
 
                 <a
-                  href="/api/db/schema-sql"
+                  href={apiUrl('/api/db/schema-sql')}
                   download="diria_cpanel_schema.sql"
                   className="px-4 py-2.5 rounded-xl text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition flex items-center justify-center gap-1.5"
                 >
