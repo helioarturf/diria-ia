@@ -1,0 +1,129 @@
+# =============================================================================
+# DirIA Angola — Deploy automático para o InfinityFree
+#
+# Corre a cada push em main (os .md são ignorados) ou à mão.
+# Compila o frontend, monta o pacote PHP e envia a pasta htdocs por FTP.
+#
+# Secrets obrigatórios (Settings → Secrets and variables → Actions):
+#   IF_HOST   servidor FTP (ex.: ftpupload.net, do painel → FTP Accounts)
+#   IF_USER   utilizador FTP (ex.: if0_12345678)
+#   IF_PASS   password FTP
+#   IF_DIR    opcional: pasta remota (vazio = autodeteta htdocs/ ou raiz)
+#   IF_DOMAIN opcional: ex.: https://o-teu-dominio — verifica depois do deploy
+#
+# Sem os secrets, o workflow compila e valida o pacote mas não envia nada.
+# =============================================================================
+
+name: Deploy para InfinityFree
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
+  workflow_dispatch:
+    inputs:
+      setup:
+        description: 'Enviar também o setup.php (1.ª instalação)'
+        required: false
+        default: 'false'
+      subpath:
+        description: 'Subpasta de destino (ex.: diria → BASE_PATH=/diria/; vazio = raiz)'
+        required: false
+        default: ''
+
+# Um deploy de cada vez: não interromper um deploy a meio.
+concurrency:
+  group: deploy-infinityfree
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Compilar e publicar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Dependências
+        run: npm ci
+
+      - name: Compilar e montar o pacote
+        env:
+          SUBPATH: ${{ github.event.inputs.subpath }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SUBPATH:-}" ]; then
+            export BASE_PATH="/${SUBPATH#/}/"
+            echo "Compilando para a subpasta ${BASE_PATH}"
+          fi
+          bash build-php-package.sh
+
+      - name: Validar o pacote
+        run: |
+          set -euo pipefail
+          test -f deploy-infinityfree/htdocs/index.html
+          test -f deploy-infinityfree/htdocs/.htaccess
+          test -f deploy-infinityfree/htdocs/api/index.php
+          test -f deploy-infinityfree/htdocs/setup.php
+          # Credenciais jamais podem sair daqui
+          if [ -f deploy-infinityfree/htdocs/api/config.local.php ]; then
+            echo "::error::config.local.php não pode ser empacotado."
+            exit 1
+          fi
+          echo "Pacote OK:"
+          find deploy-infinityfree/htdocs -type f | sort
+
+      - name: Verificar credenciais FTP
+        id: creds
+        env:
+          IF_HOST: ${{ secrets.IF_HOST }}
+        run: |
+          if [ -z "$IF_HOST" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secrets FTP não configurados — o envio foi saltado. Adiciona IF_HOST/IF_USER/IF_PASS em Settings → Secrets and variables → Actions."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar por FTP
+        if: steps.creds.outputs.skip == 'false'
+        env:
+          IF_HOST: ${{ secrets.IF_HOST }}
+          IF_USER: ${{ secrets.IF_USER }}
+          IF_PASS: ${{ secrets.IF_PASS }}
+          IF_DIR: ${{ secrets.IF_DIR }}
+          IF_DOMAIN: ${{ secrets.IF_DOMAIN }}
+          INCLUDE_SETUP: ${{ github.event.inputs.setup }}
+        run: |
+          set -euo pipefail
+          SKIP_BUILD=1 bash deploy-infinityfree.sh
+
+      - name: Verificar o site publicado
+        if: steps.creds.outputs.skip == 'false'
+        env:
+          IF_DOMAIN: ${{ secrets.IF_DOMAIN }}
+        run: |
+          if [ -z "$IF_DOMAIN" ]; then
+            echo "::notice::Secret IF_DOMAIN não definido — verificação automática saltada."
+            exit 0
+          fi
+          if bash verify-deploy.sh "$IF_DOMAIN"; then
+            echo "Deploy verificado com sucesso."
+          else
+            echo "::warning::A verificação encontrou problemas (ver o output acima)."
+            exit 1
+          fi

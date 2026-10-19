@@ -32,23 +32,52 @@ Anota:
 
 ## 2. Enviar os ficheiros
 
-Podes fazer **automático** (FTP) ou **manual** (File Manager).
+Três vias, da mais automática para a mais manual.
 
-### 2a. Automático (FTP) — recomendado
+### 2a. Automático: GitHub Actions (recomendado)
 
-Na tua máquina, no directório do projecto:
+Cada `git push` para `main` compila e publica. Configura **uma vez** no
+repositório: `Settings → Secrets and variables → Actions`:
+
+| Secret | Valor |
+|---|---|
+| `IF_HOST` | servidor FTP (`Control Panel → FTP Accounts`) |
+| `IF_USER` | utilizador FTP (ex.: `if0_12345678`) |
+| `IF_PASS` | password FTP |
+| `IF_DIR` | opcional; vazio = autodeteta `htdocs/` ou a raiz |
+| `IF_DOMAIN` | ex.: `https://o-teu-dominio` (faz a verificação depois) |
+
+Depois é só fazer `git push`: o workflow
+`.github/workflows/deploy-infinityfree.yml` compila, valida o pacote e envia
+`htdocs/` por FTP. Sem os secrets, o workflow só compila e valida (não envia).
+
+> Na **primeira instalação** o `setup.php` não é enviado de propósito.
+> Dispara o workflow à mão com o `setup.php`: `Actions → Deploy para InfinityFree
+> → Run workflow → setup: true`.
+
+### 2b. Automático: script local
 
 ```bash
-IF_HOST=ftpupload.net IF_USER=if0_XXXXXXXXX IF_PASS=XXXXXXXXXXXX bash deploy-infinityfree.sh
-# ou com domínio para verificar logo
-IF_HOST=ftpupload.net IF_USER=if0_XXXXXXXXX IF_PASS=XXXXXXXXXXXX IF_DOMAIN=https://o-teu-dominio bash deploy-infinityfree.sh
+# envia a pasta htdocs/ directamente (sem ZIP, sem extracção)
+IF_HOST=... IF_USER=... IF_PASS=... bash deploy-infinityfree.sh
+
+# primeira instalação — envia também o setup.php
+INCLUDE_SETUP=1 IF_HOST=... IF_USER=... IF_PASS=... bash deploy-infinityfree.sh
+
+# simula sem enviar nada
+DRY_RUN=1 bash deploy-infinityfree.sh
 ```
 
-O `ftpupload.net` varia consoante a tua conta (InfinityFree mostra o servidor FTP no painel: `Control Panel → FTP Accounts`).
+Garantias do script (testadas contra um servidor FTP real):
 
-Depois extrai o `diria-infinityfree.zip` em `htdocs/` via File Manager e apaga-o.
+- **nunca** envia `api/config.local.php`;
+- **não** envia `setup.php`, excepto com `INCLUDE_SETUP=1`;
+- **não apaga** nada no servidor (sem `--delete`), pelo que a
+  `config.local.php` já instalada fica intacta;
+- autodeteta se a conta FTP aponta para a raiz ou para `htdocs/`;
+- com `IF_DOMAIN=...` corre `verify-deploy.sh` no fim.
 
-### 2b. Manual (File Manager)
+### 2c. Manual (File Manager + ZIP)
 
 1. `Online File Manager` → entra em `htdocs/`.
 2. Apaga `index2.html`, `default.php`, `default.html` se existirem.
@@ -97,6 +126,10 @@ Quando tudo estiver verde:
 - **Na raiz:** aplica a este domínio. Se tiveres de pôr em subpasta, repara no guia existente.
 - **Dados reais:** o DB tem de existir primeiro (passo 1). O `setup.php` **não** cria a base de dados, só tabelas e dados iniciais.
 - **Gemini 404 "model not found":** se acontecer, no `setup.php` muda os modelos para `gemini-2.5-flash` e `gemini-2.5-flash-preview-tts` (ajustado recentemente).
-- **Sem PHP local:** já tem o zip pronto. Se necessário, `BASE_PATH=/diria/ npm run build:php` gera a versão para subpasta.
+- **Subpasta:** para publicar em `https://dominio.ao/diria/`, usa `SUBPATH=diria`
+  no script local, ou dispara o workflow à mão com `subpath: diria`.
+  (Em vez de correr `BASE_PATH=/diria/ npm run build:php` à mão.)
+- **Deploy automático:** com os secrets definidos, cada `git push` para `main`
+  publica. Os ficheiros `.md` são ignorados para não disparar deploys inúteis.
 
 Pronto. Segue por estes passos. Se algo falhar, mostra o output do `verify-deploy.sh` (ou das mensagens do `setup.php`) que eu debito à resolução.

@@ -67,12 +67,14 @@ Os testes não precisam de MySQL nem de chave de API:
 ```bash
 php php/_test_units.php      # 54 verificações: esquema, seed, fallbacks, rotas
 bash php/_test_api.sh        # 35 verificações: endpoints a correr no PHP
+bash php/_test_deploy.sh     # 29 verificações: envio FTP (usa um servidor FTP local)
 
 # testar o pacote já montado (inclui o frontend)
 DOCROOT=deploy-infinityfree/htdocs bash php/_test_api.sh
 ```
 
 Sem PHP instalado? Define `PHP_BIN` com o caminho do binário.
+O teste de deploy salta sozinho se não houver `python3`.
 
 ### Publicar numa subpasta (ex.: `https://dominio.ao/diria/`)
 
@@ -118,7 +120,15 @@ Anota os **nomes reais** que o painel mostra (têm o prefixo da conta):
 
 ### 3.2 Enviar os ficheiros
 
-`Control Panel → Online File Manager` (ou FTP com FileZilla):
+> **Automático (recomendado).** O workflow
+> `.github/workflows/deploy-infinityfree.yml` publica a cada `git push` para
+> `main` — configura os secrets `IF_HOST`, `IF_USER`, `IF_PASS` (e opcionais
+> `IF_DIR`/`IF_DOMAIN`). Alternativamente, corre `bash deploy-infinityfree.sh`
+> na tua máquina. Ambos enviam a pasta `htdocs/` directamente por FTP, sem ZIP
+> nem extracção, e nunca enviam `api/config.local.php` nem o `setup.php` já
+> instalado (`INCLUDE_SETUP=1` para a 1.ª vez).
+
+Manual, com `Control Panel → Online File Manager` (ou FTP com FileZilla):
 
 1. Entra na pasta `htdocs/`.
 2. Apaga os ficheiros por omissão do alojamento (`index2.html`, `default.php`,
@@ -230,6 +240,9 @@ actuais, por exemplo:
 | Erro 500 no site | Sintaxe/`Options` inválidos no `.htaccess` | Comenta as linhas suspeitas e testa |
 | Página abre mas sem estilos | Publicado numa subpasta sem `BASE_PATH` | Recompila com `BASE_PATH=/subpasta/` |
 | API responde 404 na subpasta | Build sem `BASE_PATH` | As chamadas iam para `/api/...` em vez de `/subpasta/api/...` |
+| `deploy-infinityfree.sh` falha com 530 | host/user/password FTP errados | O host está em `Control Panel → FTP Accounts` (não é o host MySQL) |
+| Workflow não envia nada | Secrets em falta | Adiciona `IF_HOST`/`IF_USER`/`IF_PASS` em Settings → Secrets |
+| Deploy automático esconde o `setup.php` | Por omissão é omitido | Dispara o workflow com `setup: true` na 1.ª vez |
 
 ### Teste rápido por linha de comandos (na tua máquina)
 
