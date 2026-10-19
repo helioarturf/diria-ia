@@ -8,3 +8,8 @@ coverage/
 tmp/
 .env*
 !.env.example
+
+# Pacote PHP para alojamento partilhado (InfinityFree/cPanel)
+php/htdocs/api/config.local.php
+deploy-infinityfree/
+diria-infinityfree.zip

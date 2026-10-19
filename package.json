@@ -12,6 +12,9 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "deploy:cpanel": "bash deploy-cpanel.sh",
+    "build:php": "bash build-php-package.sh",
+    "build:php:fast": "bash build-php-package.sh --skip-build",
+    "test:php": "php php/_test_units.php && bash php/_test_api.sh",
     "lint": "tsc --noEmit",
     "setup:cpanel": "node server/cpanel-setup.js"
   },
